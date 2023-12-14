@@ -1,6 +1,7 @@
 import { User } from "../models/user.models.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { COOKIE_NAME } from "../utils/constans.js";
 
 const registerUser = async (req, res) => {
   try {
@@ -39,14 +40,16 @@ const loginUser = async (req, res) => {
     if (!passwordMatch) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
+
     const token = jwt.sign(
       { userId: user._id, userType: user.userType },
       process.env.JWT_SECRET,
-      { expiresIn: "1h" }
+      { expiresIn: "7d" }
     );
-    res.cookie("jwt", token, {
+    res.cookie(COOKIE_NAME, token, {
       httpOnly: true,
       secure: true,
+      signed: true,
     });
 
     res.status(200).json({ message: "Login Successful " });

@@ -4,7 +4,8 @@ import { Order } from "../models/order.models.js";
 import { User } from "../models/user.models.js";
 
 const createCatalog = async (req, res) => {
-  const { sellerId, products } = req.body;
+  const { products } = req.body;
+  const sellerId = req.userId;
 
   try {
     const seller = await User.findOne({ _id: sellerId, userType: "seller" });
@@ -14,7 +15,12 @@ const createCatalog = async (req, res) => {
         .json({ message: "Seller not found or is not a valid seller" });
     }
 
-    const newCatalog = new Catalog({ seller: sellerId });
+    let existingCatalog = await Catalog.findOne({ seller: sellerId });
+
+    if (!existingCatalog) {
+      existingCatalog = new Catalog({ seller: sellerId, products: [] });
+    }
+
     const productIds = [];
 
     for (const product of products) {
@@ -26,9 +32,9 @@ const createCatalog = async (req, res) => {
       productIds.push(newProduct._id);
     }
 
-    newCatalog.products = productIds;
-    await newCatalog.save();
+    existingCatalog.products = existingCatalog.products.concat(productIds);
 
+    await existingCatalog.save();
     res.status(201).json({ message: "Catalog created successfully" });
   } catch (error) {
     res
@@ -37,8 +43,9 @@ const createCatalog = async (req, res) => {
   }
 };
 const orderList = async (req, res) => {
+  const sellerId = req.userId;
   try {
-    const seller = await User.findOne({ userType: "seller" });
+    const seller = await User.findOne({ _id: sellerId, userType: "seller" });
 
     if (!seller) {
       return res

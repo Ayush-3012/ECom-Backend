@@ -35,8 +35,10 @@ const sellerCatalog = async (req, res) => {
 const createOrder = async (req, res) => {
   const { items } = req.body;
   const sellerId = req.params.seller_id;
+  const buyerId = req.userId;
+
   try {
-    const buyer = await User.find({ userType: "buyer" });
+    const buyer = await User.find({ _id: buyerId, userType: "buyer" });
     if (!buyer) return res.status(404).json({ message: "Buyer not found" });
 
     const seller = await User.find({ _id: sellerId, userType: "seller" });
@@ -60,8 +62,8 @@ const createOrder = async (req, res) => {
     }
 
     const newOrder = new Order({
-      buyer: buyer[0]._id,
-      seller: seller[0]._id,
+      buyer: buyerId,
+      seller: sellerId,
       products: productIds,
     });
 
