@@ -18,7 +18,9 @@ const registerUser = async (req, res) => {
     });
 
     await newUser.save();
-    res.status(201).json({ message: "User registered successfully" });
+    res
+      .status(201)
+      .json({ message: "User registered successfully as : ", userType });
   } catch (error) {
     res
       .status(500)
@@ -46,7 +48,8 @@ const loginUser = async (req, res) => {
       httpOnly: true,
       secure: true,
     });
-    res.status(200).json({ message: "Login Successful" });
+
+    res.status(200).json({ message: "Login Successful " });
   } catch (error) {
     res.status(500).json({ message: "Login failed", error: error.message });
   }

@@ -14,10 +14,8 @@ const listSellers = async (req, res) => {
   }
 };
 const sellerCatalog = async (req, res) => {
-  const sellerId = req.params.sellerId; // Assuming the sellerId is passed in the request parameters
-
+  const sellerId = req.params.seller_id;
   try {
-    // Find catalog by sellerId
     const catalog = await Catalog.findOne({ seller: sellerId }).populate(
       "products"
     );
@@ -35,14 +33,36 @@ const sellerCatalog = async (req, res) => {
   }
 };
 const createOrder = async (req, res) => {
-  const { sellerId, items } = req.body;
-
+  const { items } = req.body;
+  const sellerId = req.params.seller_id;
   try {
-    // Create a new order
+    const buyer = await User.find({ userType: "buyer" });
+    if (!buyer) return res.status(404).json({ message: "Buyer not found" });
+
+    const seller = await User.find({ _id: sellerId, userType: "seller" });
+    if (!seller) return res.status(404).json({ message: "Seller not found" });
+
+    const catalog = await Catalog.findOne({ seller: sellerId }).populate(
+      "products"
+    );
+    const productIds = [];
+
+    for (const productId of items) {
+      const product = catalog.products.find((prod) => prod._id == productId);
+      if (product) {
+        productIds.push(product._id);
+      }
+    }
+    if (productIds.length !== items.length) {
+      return res
+        .status(400)
+        .json({ message: "One or more items not found in seller's catalog" });
+    }
+
     const newOrder = new Order({
-      buyer: req.user._id, // Assuming user details are available in the request
-      seller: sellerId,
-      products: items,
+      buyer: buyer[0]._id,
+      seller: seller[0]._id,
+      products: productIds,
     });
 
     await newOrder.save();

@@ -1,18 +1,22 @@
 import { Catalog } from "../models/catalog.models.js";
 import { Product } from "../models/product.models.js";
+import { Order } from "../models/order.models.js";
+import { User } from "../models/user.models.js";
 
 const createCatalog = async (req, res) => {
   const { sellerId, products } = req.body;
 
   try {
-    // Check if the sellerId exists (You might want to verify the seller's authenticity)
-    // ... (seller validation logic)
+    const seller = await User.findOne({ _id: sellerId, userType: "seller" });
+    if (!seller) {
+      return res
+        .status(404)
+        .json({ message: "Seller not found or is not a valid seller" });
+    }
 
-    // Create a new catalog for the seller
     const newCatalog = new Catalog({ seller: sellerId });
-
-    // Create and add products to the catalog
     const productIds = [];
+
     for (const product of products) {
       const newProduct = new Product({
         name: product.name,
@@ -33,11 +37,18 @@ const createCatalog = async (req, res) => {
   }
 };
 const orderList = async (req, res) => {
-  const sellerId = req.params.sellerId; // Assuming the sellerId is passed in the request parameters
-
   try {
-    // Find orders by sellerId
-    const orders = await Order.find({ seller: sellerId }).populate("products");
+    const seller = await User.findOne({ userType: "seller" });
+
+    if (!seller) {
+      return res
+        .status(404)
+        .json({ message: "Seller not found or is not a valid seller" });
+    }
+
+    const orders = await Order.find({ seller: seller._id }).populate(
+      "products"
+    );
 
     res.status(200).json({ orders });
   } catch (error) {
